@@ -115,13 +115,13 @@ def main():
     deps_ok, missing = check_dependencies()
     if not deps_ok:
         print(f"\n[ERROR] Missing packages: {', '.join(missing)}")
-        install_deps = input("Install missing dependencies? (y/n): ").lower().strip()
-        if install_deps == 'y':
-            if not install_dependencies():
-                return
-        else:
-            print("[INFO] Please install dependencies manually: pip install -r requirements.txt")
-            return
+#        install_deps = input("Install missing dependencies? (y/n): ").lower().strip()
+#        if install_deps == 'y':
+#           if not install_dependencies():
+#               return
+#        else:
+#            print("[INFO] Please install dependencies manually: pip install -r requirements.txt")
+        return
     
     # Check environment variables
     env_ok, missing_env = check_environment_variables()
