@@ -1024,6 +1024,8 @@ def assess_vulnerability():
             'weather_data': weather_data
         }
         assessment_id = db_manager.save_assessment(assessment_data)
+        logger.info("Assessment completed and ready to return.")
+        return jsonify({'success': True, 'data': assessment.to_dict()})
 
         return jsonify({
             'success': True,
