@@ -1117,6 +1117,7 @@
     <div class="notification" id="notification"></div>
 
     <script>
+        const BASE_API = 'https://climatesafehome.onrender.com';
         class EnhancedClimateSafeHome {
             constructor() {
                 this.uploadArea = document.getElementById('uploadArea');
@@ -1159,7 +1160,7 @@
     }
 
     try {
-        const res = await fetch(`/api/builder/${encodeURIComponent(name)}`);
+        const res = await fetch(`${BASE_API}/api/builder/${encodeURIComponent(name)}`);
         const result = await res.json();
         const panel = document.getElementById('builderResults');
         const output = document.getElementById('builderReport');
@@ -1293,7 +1294,7 @@
         roof_type: roofType
     };
 
-    fetch('http://localhost:5000/api/assess', {
+    fetch('https://climatesafehome.onrender.com/api/assess', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
