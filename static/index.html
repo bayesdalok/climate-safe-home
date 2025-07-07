@@ -1311,11 +1311,12 @@
     this.analyzeBtn.disabled = false;
     this.loadingIndicator.style.display = 'none';
     this.results.style.display = 'block';
+    console.log("Assessment API Response:", data);
 })
 
     .catch(err => {
-        console.error(err);
-        this.showNotification('API error during assessment.', 'error');
+        console.error('Fetch failed:', err);
+        this.showNotification('API unreachable or response malformed. Please try again later.', 'error');
         this.analyzeBtn.disabled = false;
         this.loadingIndicator.style.display = 'none';
     });
@@ -1357,7 +1358,7 @@
                 document.getElementById('aiInsights').style.display = 'block';
 
                 // Update weather info
-                this.updateWeatherInfo(data.weather_data);
+                this.updateWeatherInfo(data.weather_risks);
 
                 // Update recommendations
                 this.updateRecommendations(data.recommendations);
@@ -1366,7 +1367,7 @@
                 this.updateAssessmentCounter();
             if (data.ai_insights.includes("temporarily unavailable")) {
                 this.showNotification("AI unavailable. Showing rule-based suggestions.", "warning");
-}
+            }
 
             }
 
@@ -1393,29 +1394,27 @@
 
             updateRecommendations(recommendations) {
                 const improvementsContainer = document.getElementById('improvementsList');
-                
-                // Convert dollar costs to Indian Rupees (1 USD = 83 INR)
+
                 const recommendationsInRupees = recommendations.map((rec, i) => {
-                // Fallback-safe fields
-                const title = rec.title || `Recommendation ${i + 1}`;
-                const description = rec.description || rec.raw_text || "No description available.";
-                const impact = rec.impact || "Unspecified";
-                const urgency = rec.urgency || "Medium";
-                const diy = rec.diy_possible !== undefined ? rec.diy_possible : true;
+                    const title = rec.title || `Recommendation ${i + 1}`;
+                    const description = rec.description || rec.raw_text || "No description available.";
+                    const impact = rec.impact || "Not specified";
+                    const urgency = rec.urgency || "Medium";
+                    const diy = rec.diy_possible !== undefined ? rec.diy_possible : true;
 
-                let cost = rec.cost || "₹500 - 1000";
-                if (cost.startsWith('$')) {
-                    const dollarAmount = cost.replace('$', '').split('-');
-                    const inrAmount = dollarAmount.map(amount => {
-                        const num = parseFloat(amount.trim().replace(/[^0-9.]/g, ''));
-                        return isNaN(num) ? amount : Math.round(num * 83);
-                    });
-                    cost = '₹' + inrAmount.join('-');
-                }
+                    let cost = rec.cost || "₹500 - 1500";
+                    if (typeof cost === 'string' && cost.startsWith('$')) {
+                        const dollarRange = cost.replace('$', '').split('-');
+                        const rupeeRange = dollarRange.map(amount => {
+                            const num = parseFloat(amount.trim());
+                            return isNaN(num) ? amount : Math.round(num * 83);
+                        });
+                        cost = `₹${rupeeRange.join(' - ')}`;
+                    }
 
-                return { title, description, impact, urgency, diy, cost };
-            });
-                
+                    return { title, description, impact, urgency, diy, cost };
+                });
+
                 improvementsContainer.innerHTML = recommendationsInRupees.map(improvement => `
                     <div class="improvement-item">
                         <div class="improvement-header">
@@ -1428,6 +1427,7 @@
                     </div>
                 `).join('');
             }
+
 
             updateAssessmentCounter() {
                 this.assessmentCount++;
