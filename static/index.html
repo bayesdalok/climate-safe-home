@@ -1299,8 +1299,19 @@
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
 })
-.then(res => res.json())
+.then(async res => {
+    const text = await res.text();
+    try {
+        const data = JSON.parse(text);
+        console.log("Assessment API JSON:", data);
+        return data;
+    } catch (e) {
+        console.error("Failed to parse JSON. Raw response:", text);
+        throw new Error("Invalid JSON from API");
+    }
+})
 .then(data => {
+    console.log("Assessment API Response:", data);
     if (data.success) {
         this.populateResults(data.data); // ✅ This line is the fix!
         this.showNotification('Assessment complete.', 'success');
@@ -1311,7 +1322,6 @@
     this.analyzeBtn.disabled = false;
     this.loadingIndicator.style.display = 'none';
     this.results.style.display = 'block';
-    console.log("Assessment API Response:", data);
 })
 
     .catch(err => {
