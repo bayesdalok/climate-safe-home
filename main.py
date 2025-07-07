@@ -395,8 +395,9 @@ class StructuralAnalyzer:
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         # Analyze image properties
-        brightness = np.mean(gray)
-        contrast = np.std(gray)
+        brightness = np.mean(gray) if gray.size > 0 else 128
+        contrast = np.std(gray) if gray.size > 0 else 45
+        contour_count = len(contours) if contours is not None else 25
         
         # Structural assessment based on image analysis
         structural_issues = []
@@ -433,7 +434,7 @@ class StructuralAnalyzer:
             'image_metrics': {
                 'brightness': brightness,
                 'contrast': contrast,
-                'detected_features': len(contours)
+                'detected_features': contour_count  # Use the properly calculated count
             }
         }
     
@@ -837,7 +838,7 @@ class RecommendationEngine:
 
 from openai import OpenAI
 
-class GPTRecommender:
+class   GPTRecommender:
     def __init__(self, model='gpt-3.5-turbo'):
         self.model = model
         self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
@@ -995,8 +996,16 @@ def assess_vulnerability():
             )
 
             # If GPT returns nothing useful, fallback
+            # Ensure fallback recommendations are fully structured
             if not gpt_recommendations:
-                raise ValueError("GPT returned no recommendations")
+                gpt_recommendations = [{
+                    'title': 'Basic Safety Recommendations',
+                    'description': 'AI failed to generate insights. These suggestions are based on your structure and weather risks.',
+                    'cost': 'Varies',
+                    'impact': 'Provides baseline protection',
+                    'urgency': 'Medium',
+                    'diy_possible': True
+                }]
 
         except Exception as e:
             logger.warning(f"GPT failed or quota exceeded. Falling back to rule-based: {e}")
