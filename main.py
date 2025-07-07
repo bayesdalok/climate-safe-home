@@ -78,6 +78,17 @@ class VulnerabilityAssessment:
     ai_insights: str
     confidence_score: float
 
+    def to_dict(self):
+        return {
+            'overall_score': self.overall_score,
+            'risk_level': self.risk_level,
+            'structural_issues': self.structural_issues,
+            'weather_risks': self.weather_risks,
+            'recommendations': self.recommendations,
+            'ai_insights': self.ai_insights,
+            'confidence_score': self.confidence_score
+        }
+    
 class DatabaseManager:
     def __init__(self, db_path):
         self.db_path = db_path
@@ -1027,22 +1038,6 @@ def assess_vulnerability():
         logger.info("Assessment completed and ready to return.")
         return jsonify({'success': True, 'data': assessment.to_dict()})
 
-        return jsonify({
-            'success': True,
-            'data': {
-                'assessment_id': assessment_id,
-                'overall_score': assessment.overall_score,
-                'risk_level': assessment.risk_level,
-                'structural_issues': assessment.structural_issues,
-                'weather_risks': assessment.weather_risks,
-                'recommendations': assessment.recommendations,
-                'ai_insights': assessment.ai_insights,
-                'confidence_score': assessment.confidence_score,
-                'weather_data': weather_data,
-                'vulnerability_breakdown': vulnerability_result['breakdown'],
-                'timestamp': datetime.datetime.now().isoformat()
-            }
-        })
     except Exception as e:
         logger.error(f"Error in vulnerability assessment: {e}")
         return jsonify({'success': False, 'error': 'Assessment failed. Please try again.'}), 500
@@ -1372,4 +1367,6 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         exit(1)
+
+
 
