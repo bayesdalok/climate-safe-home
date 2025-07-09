@@ -838,7 +838,7 @@ class RecommendationEngine:
 
 from openai import OpenAI
 
-class   GPTRecommender:
+class GPTRecommender:
     def __init__(self, model='gpt-3.5-turbo'):
         self.model = model
         self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
@@ -998,14 +998,168 @@ def assess_vulnerability():
             # If GPT returns nothing useful, fallback
             # Ensure fallback recommendations are fully structured
             if not gpt_recommendations:
-                gpt_recommendations = [{
-                    'title': 'Basic Safety Recommendations',
-                    'description': 'AI failed to generate insights. These suggestions are based on your structure and weather risks.',
-                    'cost': 'Varies',
-                    'impact': 'Provides baseline protection',
-                    'urgency': 'Medium',
-                    'diy_possible': True
-                }]
+                fallback_recs = []
+
+                structure_type = structure_data.get("structure_type", "").lower()
+                foundation_type = structure_data.get("foundation_type", "").lower()
+                roof_type = structure_data.get("roof_type", "").lower()
+                house_age = int(structure_data.get("house_age", 0))
+                floor_count = int(structure_data.get("floor_count", 0))
+                location = structure_data.get("location", "").lower()
+
+                risk_level = risk_level.lower()
+                issues_text = " ".join(structural_issues).lower()
+
+                # 🔹 Weather risk logic
+                if weather_data.get("flood_risk") in ["High", "Medium"]:
+                    fallback_recs.append({
+                        "title": "Install Foundation Drainage",
+                        "description": "Improves water flow away from structure during floods.",
+                        "cost": "$400-700",
+                        "impact": "Reduces basement seepage and erosion",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                if weather_data.get("wind_risk") in ["High", "Medium"]:
+                    fallback_recs.append({
+                        "title": "Roof Bracing & Anchor Systems",
+                        "description": "Prevents roof displacement during storms.",
+                        "cost": "$300-500",
+                        "impact": "Increases wind stability",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                if weather_data.get("rain_risk") in ["High", "Medium"]:
+                    fallback_recs.append({
+                        "title": "Apply Waterproof Coatings",
+                        "description": "Protect walls and roof from moisture ingress.",
+                        "cost": "$150-300",
+                        "impact": "Reduces rain seepage and mold",
+                        "urgency": "Medium",
+                        "diy_possible": True
+                    })
+
+                if weather_data.get("heat_risk") == "High":
+                    fallback_recs.append({
+                        "title": "Cool Roof System",
+                        "description": "Install reflective coatings or tiles.",
+                        "cost": "$200-400",
+                        "impact": "Lowers indoor temp by 4-7°C",
+                        "urgency": "Medium",
+                        "diy_possible": True
+                    })
+
+                # 🔹 Structural issues
+                if "crack" in issues_text:
+                    fallback_recs.append({
+                        "title": "Crack Injection & Sealing",
+                        "description": "Prevent moisture and structural weakening.",
+                        "cost": "$250-500",
+                        "impact": "Improves longevity of walls",
+                        "urgency": "High",
+                        "diy_possible": True
+                    })
+
+                if "damp" in issues_text or "stain" in issues_text:
+                    fallback_recs.append({
+                        "title": "Moisture Remediation",
+                        "description": "Check drainage slope and seal damp spots.",
+                        "cost": "$150-350",
+                        "impact": "Eliminates mold and wall decay",
+                        "urgency": "Medium",
+                        "diy_possible": True
+                    })
+
+                # 🔹 Structure type
+                if structure_type == "wood":
+                    fallback_recs.append({
+                        "title": "Termite Barrier System",
+                        "description": "Treat soil and wooden parts against pests.",
+                        "cost": "$200-400",
+                        "impact": "Prevents termite infestations",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                if structure_type == "concrete" and house_age > 25:
+                    fallback_recs.append({
+                        "title": "Concrete Resurfacing",
+                        "description": "Refinish surface cracks and aging concrete.",
+                        "cost": "$300-600",
+                        "impact": "Restores strength of older slabs",
+                        "urgency": "Medium",
+                        "diy_possible": False
+                    })
+
+                # 🔹 Roof-based
+                if roof_type == "flat" and weather_data.get("rain_risk") == "High":
+                    fallback_recs.append({
+                        "title": "Add Roof Drains or Sloping",
+                        "description": "Flat roofs require enhanced drainage to prevent pooling.",
+                        "cost": "$200-500",
+                        "impact": "Eliminates stagnant water risks",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                if roof_type == "metal" and weather_data.get("heat_risk") == "High":
+                    fallback_recs.append({
+                        "title": "Install Insulated Roof Panels",
+                        "description": "Reduce radiated heat in metal-roof homes.",
+                        "cost": "$350-600",
+                        "impact": "Improves comfort by reducing heat gain",
+                        "urgency": "Medium",
+                        "diy_possible": False
+                    })
+
+                # 🔹 Foundation type
+                if foundation_type in ["strip", "raft"]:
+                    fallback_recs.append({
+                        "title": "Waterproof Basement Walls",
+                        "description": "Essential for shallow or wide foundations.",
+                        "cost": "$300-700",
+                        "impact": "Reduces rising damp",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                # 🔹 Floor count
+                if floor_count > 2:
+                    fallback_recs.append({
+                        "title": "Seismic Retrofitting",
+                        "description": "Improves structural stability for multi-storey buildings.",
+                        "cost": "$500-1000",
+                        "impact": "Reduces collapse risk during tremors",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                # 🔹 Risk-level based
+                if risk_level == "high":
+                    fallback_recs.append({
+                        "title": "Urgent Climate Audit",
+                        "description": "Consult a certified assessor to review structural and location risks.",
+                        "cost": "$500+",
+                        "impact": "Provides expert-certified risk plan",
+                        "urgency": "High",
+                        "diy_possible": False
+                    })
+
+                if not fallback_recs:
+                    fallback_recs.append({
+                        "title": "Basic Home Safety Check",
+                        "description": "Perform routine maintenance and visual inspection.",
+                        "cost": "Varies",
+                        "impact": "Identifies hidden risks",
+                        "urgency": "Low",
+                        "diy_possible": True
+                    })
+
+                gpt_insights = "AI unavailable. Recommendations are generated using structure, location, foundation, roof type, age, and weather risk rules."
+                gpt_recommendations = fallback_recs
+
 
         except Exception as e:
             logger.warning(f"GPT failed or quota exceeded. Falling back to rule-based: {e}")
