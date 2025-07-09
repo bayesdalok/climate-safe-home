@@ -951,25 +951,50 @@ def get_analytics():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/assess', methods=['POST'])
-@rate_limit(max_requests=10, window=3600) 
+@rate_limit(max_requests=1000, window=3600) 
 def assess_vulnerability():
     """Main vulnerability assessment endpoint"""
     try:
         data = request.get_json()
 
         # Validate required fields
-        required_fields = ['image', 'location', 'structure_type', 'house_age', 'floor_count', 'foundation_type', 'roof_type']
+        required_fields = ['images', 'location', 'structure_type', 'house_age', 'floor_count', 'foundation_type', 'roof_type']
         for field in required_fields:
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
 
         # Generate image hash for deduplication
-        image_hash = hashlib.md5(data['image'].encode()).hexdigest()
+        images = data['images']
+        if not isinstance(images, list) or len(images) == 0:
+            return jsonify({'success': False, 'error': 'At least one image is required'}), 400
 
-        # Weather + structural analysis
+        combined_issues = []
+        total_confidence = 0
+        all_metrics = []
+
+        for img_b64 in images[:5]:  # Limit to 5 images
+            analysis = structural_analyzer.analyze_structure(img_b64, data['structure_type'])
+            combined_issues.extend(analysis.get('structural_issues', []))
+            total_confidence += analysis.get('confidence_score', 0.6)
+            all_metrics.append(analysis.get('image_metrics', {}))
+
+        avg_confidence = round(total_confidence / len(images), 2)
+
+        # Combine all structural analysis into one object
+        structural_analysis = {
+            'structural_issues': list(set(combined_issues)),  # Remove duplicates
+            'confidence_score': avg_confidence,
+            'image_metrics': {
+                'brightness': round(np.mean([m['brightness'] for m in all_metrics]), 1),
+                'contrast': round(np.mean([m['contrast'] for m in all_metrics]), 1),
+                'detected_features': int(np.mean([m['detected_features'] for m in all_metrics]))
+            }
+        }
+
+        # Use first image's hash for caching or identification
+        image_hash = hashlib.md5(images[0].encode()).hexdigest()
+
         weather_data = weather_analyzer.get_weather_data(data['location'])
-        structural_analysis = structural_analyzer.analyze_structure(data['image'], data['structure_type'])
-
         # Score
         structure_data = {
             'structure_type': data['structure_type'],
