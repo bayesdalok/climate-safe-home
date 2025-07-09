@@ -967,12 +967,16 @@
                         <p><strong>Upload Home Photo for AI Analysis</strong></p>
                         <p>Our AI will analyze structural vulnerabilities, materials, and surroundings</p>
                     </div>
-                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                    <img id="previewImage" class="preview-image">
+                    <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+                    <img id="previewImage" class="preview-image">                    
                     <div class="ai-analysis-indicator" id="aiIndicator" style="display: none;">
                         🤖 AI Analysis Complete
                     </div>
-                </div>
+                    <div id="previewImages" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;"></div>
+                </div><p style="font-size: 0.75em; color: #6b7280; margin-top: 10px;">
+                    📌 You can upload up to 5 images (front, sides, roof) for better AI analysis of your home’s vulnerabilities.
+                </p>
+                <br/>
 
                 <div class="structure-selector">
                     <label>Primary Structure Material:</label>
@@ -1219,11 +1223,40 @@
             }
 
             handleFileSelect(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    this.processFile(file);
-                }
-            }
+            const files = Array.from(e.target.files).slice(0, 5); // limit to 5
+            this.uploadedImages = [];
+
+            const previewContainer = document.getElementById("previewImages");
+            previewContainer.innerHTML = "";
+
+            files.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+
+                this.uploadedImages.push(file);
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = document.createElement("img");
+                    img.src = event.target.result;
+                    img.style.maxHeight = "100px";
+                    img.style.borderRadius = "8px";
+                    img.style.marginRight = "8px";
+                    img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.15)";
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            this.uploadArea.classList.add('has-image');
+            this.uploadArea.classList.add('processing');
+
+            // Simulate AI delay
+            setTimeout(() => {
+                document.getElementById('aiIndicator').style.display = 'inline-block';
+                this.showNotification('Images uploaded and analyzed successfully!', 'success');
+            }, 1500);
+        }
+
 
             processFile(file) {
                 if (!file.type.startsWith('image/')) {
@@ -1231,7 +1264,7 @@
                     return;
                 }
 
-                this.uploadedImage = file;
+                this.uploadedImages = [];
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     this.previewImage.src = e.target.result;
@@ -1259,78 +1292,76 @@
             }
 
             async startAnalysis() {
-    if (!this.uploadedImage || !this.selectedStructure) {
-        this.showNotification('Please upload an image and select structure type.', 'error');
-        return;
-    }
+                if (this.uploadedImages.length === 0 || !this.selectedStructure) {
+                    this.showNotification('Please upload at least one image and select structure type.', 'error');
+                    return;
+                }
 
-    const location = document.getElementById('location').value;
-    const houseAge = document.getElementById('houseAge')?.value || 10;
-    const floorCount = document.getElementById('floorCount')?.value || "1";
-    const foundationType = document.getElementById('foundationType')?.value || "concrete";
-    const roofType = document.getElementById('roofType')?.value || "sloped";
+                const location = document.getElementById('location').value;
+                const houseAge = document.getElementById('houseAge')?.value || 10;
+                const floorCount = document.getElementById('floorCount')?.value || "1";
+                const foundationType = document.getElementById('foundationType')?.value || "concrete";
+                const roofType = document.getElementById('roofType')?.value || "sloped";
 
-    if (!location) {
-        this.showNotification('Please enter your location.', 'error');
-        return;
-    }
+                if (!location) {
+                    this.showNotification('Please enter your location.', 'error');
+                    return;
+                }
 
-    this.analyzeBtn.disabled = true;
-    this.resultsPanel.classList.add('visible');
-    this.loadingIndicator.style.display = 'block';
-    this.results.style.display = 'none';
+                this.analyzeBtn.disabled = true;
+                this.resultsPanel.classList.add('visible');
+                this.loadingIndicator.style.display = 'block';
+                this.results.style.display = 'none';
 
-    await this.simulateProcessingSteps();
+                await this.simulateProcessingSteps();
 
-    const imageBase64 = await this.getBase64(this.uploadedImage);
+                const imagePromises = this.uploadedImages.map(file => this.getBase64(file));
+                const base64Images = await Promise.all(imagePromises);
 
-    const payload = {
-        image: imageBase64,
-        location,
-        structure_type: this.selectedStructure,
-        house_age: parseInt(houseAge),
-        floor_count: floorCount,
-        foundation_type: foundationType,
-        roof_type: roofType
-    };
+                const payload = {
+                    images: base64Images,
+                    location,
+                    structure_type: this.selectedStructure,
+                    house_age: parseInt(houseAge),
+                    floor_count: floorCount,
+                    foundation_type: foundationType,
+                    roof_type: roofType
+                };
 
-    fetch('https://climatesafehome.onrender.com/api/assess', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-})
-.then(async res => {
-    const text = await res.text();
-    try {
-        const data = JSON.parse(text);
-        console.log("Assessment API JSON:", data);
-        return data;
-    } catch (e) {
-        console.error("Failed to parse JSON. Raw response:", text);
-        throw new Error("Invalid JSON from API");
-    }
-})
-.then(data => {
-    console.log("Assessment API Response:", data);
-    if (data.success) {
-        this.populateResults(data.data); // ✅ This line is the fix!
-        this.showNotification('Assessment complete.', 'success');
-    } else {
-        this.showNotification(data.error || "Assessment failed", 'error');
-    }
+                fetch(`${BASE_API}/api/assess`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(async res => {
+                    const text = await res.text();
+                    try {
+                        const data = JSON.parse(text);
+                        return data;
+                    } catch (e) {
+                        console.error("Invalid JSON from API:", text);
+                        throw new Error("JSON parse error");
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        this.populateResults(data.data);
+                        this.showNotification('Assessment complete.', 'success');
+                    } else {
+                        this.showNotification(data.error || "Assessment failed", 'error');
+                    }
 
-    this.analyzeBtn.disabled = false;
-    this.loadingIndicator.style.display = 'none';
-    this.results.style.display = 'block';
-})
-
-    .catch(err => {
-        console.error('Fetch failed:', err);
-        this.showNotification('API unreachable or response malformed. Please try again later.', 'error');
-        this.analyzeBtn.disabled = false;
-        this.loadingIndicator.style.display = 'none';
-    });
-}
+                    this.analyzeBtn.disabled = false;
+                    this.loadingIndicator.style.display = 'none';
+                    this.results.style.display = 'block';
+                })
+                .catch(err => {
+                    console.error('Fetch failed:', err);
+                    this.showNotification('API unreachable or response malformed. Please try again later.', 'error');
+                    this.analyzeBtn.disabled = false;
+                    this.loadingIndicator.style.display = 'none';
+                });
+            }
 
             
             async convertImageToBase64(file) {
@@ -1539,6 +1570,25 @@
         document.addEventListener('DOMContentLoaded', () => {
             new EnhancedClimateSafeHome();
         });
+        document.getElementById("fileInput").addEventListener("change", function (e) {
+            const files = Array.from(e.target.files).slice(0, 5); // Limit to 5
+            const previewContainer = document.getElementById("previewImages");
+            previewContainer.innerHTML = "";
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = document.createElement("img");
+                    img.src = event.target.result;
+                    img.style.maxHeight = "100px";
+                    img.style.borderRadius = "8px";
+                    img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.15)";
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
 </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
