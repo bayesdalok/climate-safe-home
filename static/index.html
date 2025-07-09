@@ -1385,10 +1385,10 @@
                 const weatherContainer = document.getElementById('weatherData');
                 
                 const weatherItems = [
-                    { label: 'Flood Risk', value: weatherData.risks.flood_risk, icon: '🌊' },
-                    { label: 'Wind Risk', value: weatherData.risks.wind_risk, icon: '💨' },
-                    { label: 'Heat Risk', value: weatherData.risks.heat_risk, icon: '🌡️' },
-                    { label: 'Rain Risk', value: weatherData.risks.rain_risk, icon: '🌧️' }
+                    { label: 'Flood Risk', value: weatherData.flood_risk, icon: '🌊' },
+                    { label: 'Wind Risk', value: weatherData.wind_risk, icon: '💨' },
+                    { label: 'Heat Risk', value: weatherData.heat_risk, icon: '🌡️' },
+                    { label: 'Rain Risk', value: weatherData.rain_risk, icon: '🌧️' }
                 ];
 
                 weatherContainer.innerHTML = weatherItems.map(item => `
