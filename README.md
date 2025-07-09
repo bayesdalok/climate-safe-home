@@ -55,7 +55,7 @@ cp .env.template .env  # or manually create .env
 
 # Run the app
 python start.py
-
+```
 --- 
 
 ## AI & Fallback Logic
