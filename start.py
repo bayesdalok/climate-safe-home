@@ -28,7 +28,7 @@ def check_dependencies():
         'Flask-Cors': 'flask_cors',
         'Jinja2': 'jinja2',
         'MarkupSafe': 'markupsafe',
-        'opencv-contrib-python': 'cv2',
+        'opencv-python': 'cv2',
         'pillow': 'PIL',
         'python-dotenv': 'dotenv',
         'Werkzeug': 'werkzeug'
