@@ -7,6 +7,7 @@ This script helps with initial setup and environment checking
 import os
 import sys
 import subprocess
+from dotenv import load_dotenv
 
 def check_python_version():
     """Check if Python version is compatible"""
@@ -20,38 +21,36 @@ def check_python_version():
 
 def check_dependencies():
     """Check if required packages are installed"""
-    required_packages = [
-        'flask', 'flask_cors', 'cv2', 'numpy',
-        'requests', 'PIL', 'sqlite3', 'dotenv'
-    ]
-    
+    try:
+        with open('requirements.txt') as f:
+            required_packages = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print("[ERROR] requirements.txt not found")
+        return False, []
+
     missing_packages = []
     for package in required_packages:
+        package_name = package.split('==')[0]
         try:
-            if package == 'cv2':
+            if package_name == 'opencv-python':
                 import cv2
-            elif package == 'PIL':
+            elif package_name == 'Pillow':
                 from PIL import Image
-            elif package == 'flask_cors':
-                from flask_cors import CORS
-            elif package == 'dotenv':
-                from dotenv import load_dotenv
             else:
-                __import__(package)
-            print(f"[OK] {package}")
+                __import__(package_name)
+            print(f"[OK] {package_name}")
         except ImportError:
-            print(f"[MISSING] {package}")
-            missing_packages.append(package)
+            print(f"[MISSING] {package_name}")
+            missing_packages.append(package_name)
     
     return len(missing_packages) == 0, missing_packages
 
 def check_environment_variables():
     """Check if required environment variables are set"""
-    from dotenv import load_dotenv
     load_dotenv()
     
     required_vars = ['OPENWEATHER_API_KEY', 'SECRET_KEY']
-    optional_vars = ['GOOGLE_VISION_API_KEY', 'FLASK_DEBUG', 'PORT']
+    optional_vars = ['OPENAI_API_KEY', 'FLASK_DEBUG', 'PORT']
     
     missing_required = []
     
@@ -73,75 +72,34 @@ def check_environment_variables():
 
     return len(missing_required) == 0, missing_required
 
-def install_dependencies():
-    """Install required dependencies"""
-    print("\n[INFO] Installing dependencies...")
-    try:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
-        print("[OK] Dependencies installed successfully")
-        return True
-    except subprocess.CalledProcessError:
-        print("[ERROR] Failed to install dependencies")
-        return False
-
-def create_env_file():
-    """Create .env file from template"""
-    if not os.path.exists('.env') and os.path.exists('.env.template'):
-        print("\n[INFO] Creating .env file from template...")
-        with open('.env.template', 'r') as template:
-            with open('.env', 'w') as env_file:
-                env_file.write(template.read())
-        print("[OK] .env file created. Please edit it with your API keys.")
-        return True
-    elif os.path.exists('.env'):
-        print("[OK] .env file already exists")
-        return True
-    else:
-        print("[ERROR] No .env template found")
-        return False
-
 def main():
     """Main setup function"""
     print("Climate Safe Home API - Setup Check\n")
 
     # Check Python version
     if not check_python_version():
-        return
-    
-    # Create .env file if needed
-    create_env_file()
+        sys.exit(1)
     
     # Check dependencies
     deps_ok, missing = check_dependencies()
     if not deps_ok:
         print(f"\n[ERROR] Missing packages: {', '.join(missing)}")
-#        install_deps = input("Install missing dependencies? (y/n): ").lower().strip()
-#        if install_deps == 'y':
-#           if not install_dependencies():
-#               return
-#        else:
-#            print("[INFO] Please install dependencies manually: pip install -r requirements.txt")
-        return
+        print("[INFO] Please install dependencies: pip install -r requirements.txt")
+        sys.exit(1)
     
     # Check environment variables
     env_ok, missing_env = check_environment_variables()
     if not env_ok:
         print(f"\n[ERROR] Missing required environment variables: {', '.join(missing_env)}")
-        print("[INFO] Please set these in your .env file or as system environment variables")
-        print("\nTo get your OpenWeather API key:")
-        print("1. Visit: https://openweathermap.org/api")
-        print("2. Sign up and generate your API key")
-        print("3. Add it in .env as: OPENWEATHER_API_KEY=your_key_here")
-        return
+        print("[INFO] Please set these in your .env file")
+        sys.exit(1)
     
     print("\n[INFO] Setup check complete. Starting the application...\n")
 
     # Import and run the main application
     try:
-        from dotenv import load_dotenv
-        load_dotenv()
-        
-        from main import app, db_manager
+        from app import app
+        from app.utils.database import db_manager
 
         db_manager.init_database()
         print("[OK] Database initialized")
@@ -164,6 +122,7 @@ def main():
         print("\n[INFO] Server stopped by user")
     except Exception as e:
         print(f"[ERROR] Failed to start server: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

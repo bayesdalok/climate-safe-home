@@ -1076,7 +1076,10 @@
                             <div class="risk-level" id="riskLevel">Assessment Pending</div>
                         </div>
                     </div>
-
+                    <div class="score-breakdown-panel" id="scoreBreakdownPanel" style="margin-bottom: 40px; display: none;">
+                        <h4 style="margin-bottom: 15px; color: #1f2937;">📊 Score Breakdown</h4>
+                        <ul id="scoreBreakdownList" style="list-style: none; padding-left: 0;"></ul>
+                      </div>                
                     <div class="ai-insights" id="aiInsights" style="display: none;">
                         <h4>AI Vision Analysis</h4>
                         <p id="aiInsightsText">Advanced image analysis results will appear here...</p>
@@ -1409,7 +1412,44 @@
             if (data.ai_insights.includes("temporarily unavailable")) {
                 this.showNotification("AI unavailable. Showing rule-based suggestions.", "warning");
             }
+            const breakdownPanel = document.getElementById("scoreBreakdownPanel");
+            const breakdownList = document.getElementById("scoreBreakdownList");
 
+            if (data.score_breakdown) {
+                breakdownList.innerHTML = "";
+
+                for (const [label, value] of Object.entries(data.score_breakdown)) {
+                    const li = document.createElement("li");
+                    li.style.marginBottom = "6px";
+                    li.style.padding = "8px 12px";
+                    li.style.borderRadius = "8px";
+                    li.style.fontWeight = "500";
+                    li.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+
+                    // Color based on impact
+                    if (value >= 10) {
+                        li.style.backgroundColor = "#dcfce7";  // light green
+                        li.style.color = "#166534";           // dark green
+                    } else if (value <= -5) {
+                        li.style.backgroundColor = "#fee2e2";  // light red
+                        li.style.color = "#991b1b";           // dark red
+                    } else {
+                        li.style.backgroundColor = "#f3f4f6";  // gray
+                        li.style.color = "#374151";           // neutral dark
+                    }
+
+                    const formattedLabel = label
+                        .replace(/_/g, ' ')
+                        .replace(/\b\w/g, c => c.toUpperCase()); // Capitalize
+
+                    li.innerHTML = `<strong>${formattedLabel}:</strong> ${value > 0 ? '+' : ''}${value}`;
+                    breakdownList.appendChild(li);
+                }
+
+                breakdownPanel.style.display = "block";
+            } else {
+                breakdownPanel.style.display = "none";
+            }
             }
 
             updateWeatherInfo(weatherData) {
@@ -1564,24 +1604,25 @@
                 });
             }
 }
-
-
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
             new EnhancedClimateSafeHome();
         });
-        document.getElementById("fileInput").addEventListener("change", function (e) {
-            const files = Array.from(e.target.files).slice(0, 5); // Limit to 5
+        document.getElementById("fileInput").addEventListener("change", function(e) {
+            const files = Array.from(e.target.files).slice(0, 5);
             const previewContainer = document.getElementById("previewImages");
             previewContainer.innerHTML = "";
 
             files.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+
                 const reader = new FileReader();
-                reader.onload = function (event) {
+                reader.onload = function(event) {
                     const img = document.createElement("img");
                     img.src = event.target.result;
                     img.style.maxHeight = "100px";
                     img.style.borderRadius = "8px";
+                    img.style.margin = "5px";
                     img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.15)";
                     previewContainer.appendChild(img);
                 };
@@ -1606,22 +1647,6 @@
             document.getElementById("landingPage").style.display = "flex";
             window.scrollTo(0, 0);
 }
-</script>
-<script> 
-    function startApp() {
-        document.getElementById("landingPage").style.display = "none";
-        const app = document.getElementById("mainApp");
-        app.style.display = "block";
-        app.classList.add("visible");
-        window.scrollTo(0, 0);
-    }
-
-    function goBackToLanding() {
-        document.getElementById("mainApp").classList.remove("visible");
-        document.getElementById("mainApp").style.display = "none";
-        document.getElementById("landingPage").style.display = "flex";
-        window.scrollTo(0, 0);
-    }
 </script>
 </body>
 </html>
