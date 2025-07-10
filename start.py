@@ -22,16 +22,14 @@ def check_python_version():
 def check_dependencies():
     """Check if required packages are installed"""
     package_map = {
-        'annotated-types': 'annotated_types',
-        'charset-normalizer': 'charset_normalizer',
         'Flask': 'flask',
         'Flask-Cors': 'flask_cors',
-        'Jinja2': 'jinja2',
-        'MarkupSafe': 'markupsafe',
+        'numpy': 'numpy',
         'opencv-python': 'cv2',
-        'pillow': 'PIL',
+        'Pillow': 'PIL',
         'python-dotenv': 'dotenv',
-        'Werkzeug': 'werkzeug'
+        'requests': 'requests',
+        'openai': 'openai'
     }
     
     try:
@@ -52,8 +50,8 @@ def check_dependencies():
             else:
                 __import__(import_name)
             print(f"[OK] {package}")
-        except ImportError:
-            print(f"[MISSING] {package}")
+        except ImportError as e:
+            print(f"[MISSING] {package} (Error: {str(e)})")
             missing_packages.append(package)
     
     return len(missing_packages) == 0, missing_packages
