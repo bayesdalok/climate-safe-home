@@ -21,27 +21,40 @@ def check_python_version():
 
 def check_dependencies():
     """Check if required packages are installed"""
+    package_map = {
+        'annotated-types': 'annotated_types',
+        'charset-normalizer': 'charset_normalizer',
+        'Flask': 'flask',
+        'Flask-Cors': 'flask_cors',
+        'Jinja2': 'jinja2',
+        'MarkupSafe': 'markupsafe',
+        'opencv-contrib-python': 'cv2',
+        'pillow': 'PIL',
+        'python-dotenv': 'dotenv',
+        'Werkzeug': 'werkzeug'
+    }
+    
     try:
         with open('requirements.txt') as f:
-            required_packages = [line.strip() for line in f if line.strip()]
+            required_packages = [line.strip().split('==')[0] for line in f if line.strip()]
     except FileNotFoundError:
         print("[ERROR] requirements.txt not found")
         return False, []
 
     missing_packages = []
     for package in required_packages:
-        package_name = package.split('==')[0]
+        import_name = package_map.get(package, package)
         try:
-            if package_name == 'opencv-python':
-                import cv2
-            elif package_name == 'Pillow':
+            if import_name == 'PIL':
                 from PIL import Image
+            elif import_name == 'flask_cors':
+                from flask_cors import CORS
             else:
-                __import__(package_name)
-            print(f"[OK] {package_name}")
+                __import__(import_name)
+            print(f"[OK] {package}")
         except ImportError:
-            print(f"[MISSING] {package_name}")
-            missing_packages.append(package_name)
+            print(f"[MISSING] {package}")
+            missing_packages.append(package)
     
     return len(missing_packages) == 0, missing_packages
 
