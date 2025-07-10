@@ -9,6 +9,13 @@ import sys
 import subprocess
 from dotenv import load_dotenv
 
+# Debug imports
+try:
+    import cv2
+    print(f"[DEBUG] OpenCV imported successfully from: {cv2.__file__}")
+except Exception as e:
+    print(f"[DEBUG] OpenCV import failed: {str(e)}")
+
 def check_python_version():
     """Check if Python version is compatible"""
     if sys.version_info < (3, 8):
@@ -22,15 +29,23 @@ def check_python_version():
 def check_dependencies():
     """Check if required packages are installed"""
     package_map = {
-        'Flask': 'flask',
-        'Flask-Cors': 'flask_cors',
-        'numpy': 'numpy',
-        'opencv-python': 'cv2',
-        'Pillow': 'PIL',
-        'python-dotenv': 'dotenv',
-        'requests': 'requests',
-        'openai': 'openai'
-    }
+    'Flask': 'flask',
+    'Flask-Cors': 'flask_cors',
+    'numpy': 'numpy',
+    'opencv-python': 'cv2',
+    'opencv-contrib-python': 'cv2',
+    'Pillow': 'PIL',
+    'python-dotenv': 'dotenv',
+    'requests': 'requests',
+    'openai': 'openai',
+    'Werkzeug': 'werkzeug',
+    'PySocks': 'socks',
+    'MarkupSafe': 'markupsafe',
+    'Jinja2': 'jinja2',
+    'websocket-client': 'websocket',
+    'trio-websocket': 'trio_websocket',
+    'python-dateutil': 'dateutil'
+}
     
     try:
         with open('requirements.txt') as f:
