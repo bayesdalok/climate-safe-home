@@ -1,0 +1,6 @@
+build:
+  commands:
+    - pip install -r requirements.txt
+
+start:
+  command: python start.py
