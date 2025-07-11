@@ -4,3 +4,4 @@ __pycache__/
 climate_safe_home.db
 *.sqlite3
 
+.venv
