@@ -122,6 +122,14 @@ def main():
     
     print("\n[INFO] Setup check complete. Starting the application...\n")
 
+    # --- Ensure critical packages are force-installed ---
+    for package in ['annotated-types', 'charset-normalizer', 'pillow']:
+        try:
+            __import__(package.replace('-', '_') if '-' in package else package)
+        except ImportError:
+            print(f"[FIX] Installing missing package: {package}")
+            subprocess.call([sys.executable, "-m", "pip", "install", package])
+
     # Import and run the main application
     try:
         from app import app
