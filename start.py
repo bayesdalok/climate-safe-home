@@ -8,13 +8,11 @@ import os
 import sys
 import subprocess
 from dotenv import load_dotenv
+from app import create_app
+from app.utils.database import db_manager
+import logging
+from app.utils.logger import configure_logging
 
-# Debug imports
-try:
-    import cv2
-    print(f"[DEBUG] OpenCV imported successfully from: {cv2.__file__}")
-except Exception as e:
-    print(f"[DEBUG] OpenCV import failed: {str(e)}")
 
 def check_python_version():
     """Check if Python version is compatible"""
@@ -28,45 +26,27 @@ def check_python_version():
 
 def check_dependencies():
     """Check if required packages are installed"""
-    package_map = {
-    'Flask': 'flask',
-    'Flask-Cors': 'flask_cors',
-    'numpy': 'numpy',
-    'opencv-python': 'cv2',
-    'opencv-contrib-python': 'cv2',
-    'Pillow': 'PIL',
-    'python-dotenv': 'dotenv',
-    'requests': 'requests',
-    'openai': 'openai',
-    'Werkzeug': 'werkzeug',
-    'PySocks': 'socks',
-    'MarkupSafe': 'markupsafe',
-    'Jinja2': 'jinja2',
-    'websocket-client': 'websocket',
-    'trio-websocket': 'trio_websocket',
-    'python-dateutil': 'dateutil'
-}
+    required_packages = [
+        'flask', 'flask_cors', 'cv2', 'numpy',
+        'requests', 'PIL', 'sqlite3', 'dotenv'
+    ]
     
-    try:
-        with open('requirements.txt') as f:
-            required_packages = [line.strip().split('==')[0] for line in f if line.strip()]
-    except FileNotFoundError:
-        print("[ERROR] requirements.txt not found")
-        return False, []
-
     missing_packages = []
     for package in required_packages:
-        import_name = package_map.get(package, package)
         try:
-            if import_name == 'PIL':
+            if package == 'cv2':
+                import cv2
+            elif package == 'PIL':
                 from PIL import Image
-            elif import_name == 'flask_cors':
+            elif package == 'flask_cors':
                 from flask_cors import CORS
+            elif package == 'dotenv':
+                from dotenv import load_dotenv
             else:
-                __import__(import_name)
+                __import__(package)
             print(f"[OK] {package}")
-        except ImportError as e:
-            print(f"[MISSING] {package} (Error: {str(e)})")
+        except ImportError:
+            print(f"[MISSING] {package}")
             missing_packages.append(package)
     
     return len(missing_packages) == 0, missing_packages
@@ -98,20 +78,55 @@ def check_environment_variables():
 
     return len(missing_required) == 0, missing_required
 
+def install_dependencies():
+    """Install required dependencies"""
+    print("\n[INFO] Installing dependencies...")
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
+        print("[OK] Dependencies installed successfully")
+        return True
+    except subprocess.CalledProcessError:
+        print("[ERROR] Failed to install dependencies")
+        return False
+
+def create_env_file():
+    """Create .env file from template"""
+    if not os.path.exists('.env') and os.path.exists('.env.template'):
+        print("\n[INFO] Creating .env file from template...")
+        with open('.env.template', 'r') as template:
+            with open('.env', 'w') as env_file:
+                env_file.write(template.read())
+        print("[OK] .env file created. Please edit it with your API keys.")
+        return True
+    elif os.path.exists('.env'):
+        print("[OK] .env file already exists")
+        return True
+    else:
+        print("[ERROR] No .env template found")
+        return False
+
 def main():
     """Main setup function"""
+    # Configure logging first
+    configure_logging()
+    logger = logging.getLogger(__name__)
     print("Climate Safe Home API - Setup Check\n")
 
     # Check Python version
     if not check_python_version():
-        sys.exit(1)
+        return
     
     # Check dependencies
     deps_ok, missing = check_dependencies()
     if not deps_ok:
         print(f"\n[ERROR] Missing packages: {', '.join(missing)}")
-        print("[INFO] Please install dependencies: pip install -r requirements.txt")
-        sys.exit(1)
+        install_deps = input("Install missing dependencies? (y/n): ").lower().strip()
+        if install_deps == 'y':
+           if not install_dependencies():
+               return
+        else:
+            print("[INFO] Please install dependencies manually: pip install -r requirements.txt")
+        return
     
     # Check environment variables
     env_ok, missing_env = check_environment_variables()
@@ -132,9 +147,7 @@ def main():
 
     # Import and run the main application
     try:
-        from app import app
-        from app.utils.database import db_manager
-
+        app = create_app()
         db_manager.init_database()
         print("[OK] Database initialized")
 
