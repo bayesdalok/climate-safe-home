@@ -12,3 +12,58 @@ class Config:
 
     # DB
     DATABASE_PATH = "climate_safe_home.db"
+
+# Vulnerability constants for risk assessment and recommendations
+VULNERABILITY_CONSTANTS = {
+    # Structural vulnerability weights
+    'STRUCTURAL_WEIGHTS': {
+        'foundation_damage': 0.35,
+        'wall_cracks': 0.25,
+        'roof_damage': 0.30,
+        'window_damage': 0.10
+    },
+    
+    # Weather risk thresholds
+    'WEATHER_THRESHOLDS': {
+        'high_wind_speed': 50,  # km/h
+        'medium_wind_speed': 25,  # km/h
+        'high_temperature': 40,  # Celsius
+        'medium_temperature': 35,  # Celsius
+        'high_rain_probability': 70,  # percentage
+        'medium_rain_probability': 40,  # percentage
+        'heavy_rain_3h': 20,  # mm in 3 hours
+        'moderate_rain_3h': 10  # mm in 3 hours
+    },
+    
+    # Risk scoring parameters
+    'RISK_SCORES': {
+        'low': 1,
+        'medium': 3,
+        'high': 5
+    },
+    
+    # Recommendation categories
+    'RECOMMENDATION_CATEGORIES': {
+        'immediate': 'Immediate Action Required',
+        'short_term': 'Short-term Improvements',
+        'long_term': 'Long-term Planning',
+        'preventive': 'Preventive Measures'
+    },
+    
+    # Priority levels
+    'PRIORITY_LEVELS': {
+        'critical': 5,
+        'high': 4,
+        'medium': 3,
+        'low': 2,
+        'minimal': 1
+    },
+    
+    # Vulnerability types
+    'VULNERABILITY_TYPES': {
+        'structural': 'Structural Damage',
+        'weather': 'Weather-related Risk',
+        'environmental': 'Environmental Hazard',
+        'maintenance': 'Maintenance Issue'
+    }
+}

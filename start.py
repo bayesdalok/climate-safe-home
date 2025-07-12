@@ -8,8 +8,8 @@ import os
 import sys
 import subprocess
 from dotenv import load_dotenv
-from app import create_app
-from app.utils.database import db_manager
+from app import app 
+from app.utils.database import DatabaseManager
 import logging
 from app.utils.logger import configure_logging
 
@@ -115,7 +115,7 @@ def main():
     # Check Python version
     if not check_python_version():
         return
-    
+
     # Check dependencies
     deps_ok, missing = check_dependencies()
     if not deps_ok:
@@ -147,8 +147,8 @@ def main():
 
     # Import and run the main application
     try:
-        app = create_app()
-        db_manager.init_database()
+#        app = create_app()
+        DatabaseManager("climate_safe_home.db").init_database()
         print("[OK] Database initialized")
 
         debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'

@@ -2,15 +2,20 @@ from flask import Flask
 from flask_cors import CORS
 from .config import Config
 from .utils.logger import configure_logging
-from .utils.database import db_manager
+from .utils.database import DatabaseManager
+import logging
+import sqlite3
 
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(Config)
 
-# Initialize components
+# Logging setup
 configure_logging()
-db_manager.init_database()
+logger = logging.getLogger(__name__)
+
+# Initialize database
+DatabaseManager(Config.DATABASE_PATH).init_database()
 
 # Import routes
 from .routes import (
@@ -24,9 +29,8 @@ from .routes import (
     test
 )
 
-# Initialize database with sample data
+# Add sample builder data if table is empty
 try:
-    # Add sample builder data if table is empty
     conn = sqlite3.connect(Config.DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT COUNT(*) FROM builders')
