@@ -63,7 +63,7 @@ def upload_file():
 def serve_index():
     static_dir = os.path.join(os.path.dirname(__file__), 'static')
     if not os.path.exists(static_dir):
-        os.makedirs(static_dir)
+        os.makedirs(static_dir, exist_ok=True)
         # Create a basic index.html if it doesn't exist
         with open(os.path.join(static_dir, 'index.html'), 'w') as f:
             f.write('<h1>Climate Safe Home API</h1><p>API is running. Use /api/test to test endpoints.</p>')
