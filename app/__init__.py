@@ -49,3 +49,17 @@ try:
 except Exception as e:
     logger.error(f"Failed to initialize database: {e}")
     exit(1)
+
+from flask import send_from_directory
+import os
+
+# Serve index.html for all frontend routes (SPA fallback)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_vue(path):
+    static_dir = os.path.join(app.root_path, 'static')
+
+    if path != "" and os.path.exists(os.path.join(static_dir, path)):
+        return send_from_directory(static_dir, path)
+    else:
+        return send_from_directory(static_dir, 'index.html')
