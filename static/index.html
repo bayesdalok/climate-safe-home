@@ -1634,13 +1634,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script> 
+        // Replace your current startApp function with this:
         function startApp() {
             document.getElementById("landingPage").style.display = "none";
-            const app = document.getElementById("mainApp");
-            app.classList.add("visible");
-            window.scrollTo(0, 0);
-}
+            document.getElementById("mainApp").style.display = "block";
+            
+            // Update URL without reload
+            if (window.location.pathname !== '/analyze') {
+                window.history.pushState({}, '', '/analyze');
+            }
+        }
 
+        // Add this to handle direct navigation
+        window.addEventListener('popstate', function() {
+            if (window.location.pathname === '/analyze') {
+                document.getElementById("landingPage").style.display = "none";
+                document.getElementById("mainApp").style.display = "block";
+            } else {
+                document.getElementById("landingPage").style.display = "flex";
+                document.getElementById("mainApp").style.display = "none";
+            }
+        });
+
+// Handle initial load
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.pathname === '/analyze') {
+        startApp();
+    }
+});
         function goBackToLanding() {
             document.getElementById("mainApp").classList.remove("visible");
             document.getElementById("mainApp").style.display = "none";

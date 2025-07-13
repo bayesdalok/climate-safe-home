@@ -6,7 +6,7 @@ from .utils.database import DatabaseManager
 import logging
 import sqlite3
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../static')
 CORS(app)
 app.config.from_object(Config)
 
@@ -50,16 +50,29 @@ except Exception as e:
     logger.error(f"Failed to initialize database: {e}")
     exit(1)
 
+def create_app():
+    # If you need factory pattern
+    app = Flask(__name__, static_folder='../static')
+    # Configure your app here
+    return app
+
 from flask import send_from_directory
 import os
 
 # Serve index.html for all frontend routes (SPA fallback)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def serve_vue(path):
-    static_dir = os.path.join(app.root_path, 'static')
-
-    if path != "" and os.path.exists(os.path.join(static_dir, path)):
+def serve_spa(path):
+    static_dir = os.path.join(app.root_path, '../static')
+    
+    # Handle API routes first
+    if path.startswith('api/'):
+        return 'Not Found', 404
+    
+    # Check if the file exists
+    file_path = os.path.join(static_dir, path)
+    if path != "" and os.path.exists(file_path):
         return send_from_directory(static_dir, path)
-    else:
-        return send_from_directory(static_dir, 'index.html')
+    
+    # Default to index.html for SPA routing
+    return send_from_directory(static_dir, 'index.html')

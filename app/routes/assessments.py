@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from app.services.analyzer import structural_analyzer
+from app.services.structural import structural_analyzer
 from app.services.weather import weather_analyzer
 from app.services.recommender import recommendation_engine, GPTRecommender
 from app.models.assessment import VulnerabilityAssessment, save_assessment
