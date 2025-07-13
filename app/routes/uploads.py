@@ -61,10 +61,16 @@ def upload_file():
 
 @app.route('/')
 def serve_index():
-    static_dir = os.path.join(os.path.dirname(__file__), 'static')
-    if not os.path.exists(static_dir):
+    static_dir = os.path.join(os.path.dirname(__file__), 'static') 
+    try:
         os.makedirs(static_dir, exist_ok=True)
-        # Create a basic index.html if it doesn't exist
-        with open(os.path.join(static_dir, 'index.html'), 'w') as f:
+    except Exception as e:
+        logger.warning(f"Static directory already exists or cannot be created: {e}")
+    
+    index_path = os.path.join(static_dir, 'index.html')
+    
+    if not os.path.exists(index_path):
+        with open(index_path, 'w') as f:
             f.write('<h1>Climate Safe Home API</h1><p>API is running. Use /api/test to test endpoints.</p>')
-    return send_from_directory('static', 'index.html')
+    
+    return send_from_directory(static_dir, 'index.html')
