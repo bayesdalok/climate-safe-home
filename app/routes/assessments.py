@@ -6,6 +6,9 @@ from app.models.assessment import VulnerabilityAssessment, save_assessment
 from app.utils.limiter import rate_limit
 from app import app
 
+import logging
+logger = logging.getLogger(__name__)
+
 @app.route('/api/assess', methods=['POST'])
 @rate_limit(max_requests=1000, window=3600) 
 def assess_vulnerability():
@@ -392,5 +395,14 @@ def export_assessment(assessment_id):
         })
         
     except Exception as e:
-        logger.error(f"Error exporting assessment {assessment_id}: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        import traceback
+        print("Unhandled exception in /api/assess")
+        traceback.print_exc()
+
+        # If logger fails for some reason, fallback to print
+        try:
+            logger.error(f"Error in vulnerability assessment: {e}")
+        except Exception:
+            pass
+
+        return jsonify({'success': False, 'error': 'Assessment failed. Please try again.'}), 500
