@@ -1648,5 +1648,14 @@
             window.scrollTo(0, 0);
 }
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const route = window.location.pathname;
+
+        if (route.includes('/analyze') || route.includes('/report')) {
+            startApp();
+        }
+    });
+</script>
 </body>
 </html>
