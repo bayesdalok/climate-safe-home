@@ -398,14 +398,8 @@ def export_assessment(assessment_id):
         })
         
     except Exception as e:
-        import traceback
-        print("Unhandled exception in /api/assess")
-        traceback.print_exc()
-
-        # If logger fails for some reason, fallback to print
-        try:
-            logger.error(f"Error in vulnerability assessment: {e}")
-        except Exception:
-            pass
-
-        return jsonify({'success': False, 'error': 'Assessment failed. Please try again.'}), 500
+        logger.error(f"Error in vulnerability assessment: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False, 
+            'error': f'Assessment failed: {str(e)}'  # More detailed error
+        }), 500

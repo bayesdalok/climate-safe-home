@@ -1,6 +1,7 @@
 from flask_cors import CORS
 from .config import Config
 from .utils.logger import configure_logging
+from app.services.weather import weather_analyzer
 from .utils.database import DatabaseManager
 import logging
 import sqlite3
@@ -17,6 +18,13 @@ logger = logging.getLogger(__name__)
 
 # Initialize database
 DatabaseManager(Config.DATABASE_PATH).init_database()
+
+# Before route imports in __init__.py
+from app.services import (
+    structural_analyzer,
+    weather_analyzer,
+    vulnerability_calculator
+)
 
 # Import routes
 from .routes import (
@@ -57,6 +65,12 @@ def create_app():
     # Configure your app here
     return app
 
+# After app initialization in __init__.py
+if not os.path.exists(Config.DATABASE_PATH):
+    logger.info(f"Creating new database at {Config.DATABASE_PATH}")
+    open(Config.DATABASE_PATH, 'w').close()  # Create empty file
+
+    
 from flask import send_from_directory
 import os
 

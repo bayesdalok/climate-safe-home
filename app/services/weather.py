@@ -143,8 +143,7 @@ class WeatherAnalyzer:
 def get_weather_analyzer():
     """Get weather analyzer instance with proper error handling"""
     try:
-        api_key = getattr(Config, 'OPENWEATHER_API_KEY', None)
-        return WeatherAnalyzer(api_key)
+        return WeatherAnalyzer(Config.OPENWEATHER_API_KEY)  # Directly use Config
     except AttributeError:
         logger.warning("Config.OPENWEATHER_API_KEY not found, using None")
         return WeatherAnalyzer(None)
