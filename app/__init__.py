@@ -5,8 +5,9 @@ from .utils.logger import configure_logging
 from .utils.database import DatabaseManager
 import logging
 import sqlite3
+from flask import jsonify
 
-app = Flask(__name__, static_folder='../static')
+app = Flask(__name__, static_folder='static')
 CORS(app)
 app.config.from_object(Config)
 
@@ -52,7 +53,7 @@ except Exception as e:
 
 def create_app():
     # If you need factory pattern
-    app = Flask(__name__, static_folder='../static')
+    app = Flask(__name__, static_folder='static')
     # Configure your app here
     return app
 
@@ -63,12 +64,12 @@ import os
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_spa(path):
-    static_dir = os.path.join(app.root_path, '../static')
+    static_dir = os.path.join(app.root_path, 'static')
     
     # Handle API routes first
     if path.startswith('api/'):
-        return 'Not Found', 404
-    
+        return jsonify({'success': False, 'error': 'API endpoint not found'}), 404
+
     # Check if the file exists
     file_path = os.path.join(static_dir, path)
     if path != "" and os.path.exists(file_path):

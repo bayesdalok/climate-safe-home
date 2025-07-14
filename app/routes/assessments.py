@@ -5,6 +5,9 @@ from app.services.recommender import recommendation_engine, GPTRecommender
 from app.models.assessment import VulnerabilityAssessment, save_assessment
 from app.utils.limiter import rate_limit
 from app import app
+import numpy as np
+import hashlib
+from app.services.vulnerabity import vulnerability_calculator
 
 import logging
 logger = logging.getLogger(__name__)
