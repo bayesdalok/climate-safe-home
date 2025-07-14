@@ -7,7 +7,7 @@ import sqlite3
 from flask import Flask, send_from_directory, request, jsonify
 import os
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_folder='../static')
 CORS(app)
 app.config.from_object(Config)
 
@@ -61,15 +61,13 @@ from flask import send_from_directory
 import os
 
 # Serve index.html for all frontend routes (SPA fallback)
+# Add this catch-all route (MUST be last route definition)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def catch_all(path):
-    if path.startswith('api/'):
-        return jsonify({'success': False, 'error': 'API endpoint not found'}), 404
-
-    static_path = os.path.join(app.static_folder, path)
-    if path and os.path.exists(static_path):
-        return send_from_directory(app.static_folder, path)
-
-    # ✅ Fallback to index.html for React/Vue-style routes like /analyze
-    return send_from_directory(app.static_folder, 'index.html')
+def serve(path):
+    static_dir = os.path.join(app.root_path, '../static')
+    # First try to serve static files
+    if path and os.path.exists(os.path.join(static_dir, path)):
+        return send_from_directory(static_dir, path)
+    # Then fall back to index.html
+    return send_from_directory(static_dir, 'index.html')
