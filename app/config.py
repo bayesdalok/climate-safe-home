@@ -65,5 +65,32 @@ VULNERABILITY_CONSTANTS = {
         'weather': 'Weather-related Risk',
         'environmental': 'Environmental Hazard',
         'maintenance': 'Maintenance Issue'
-    }
+    },
+        # Vulnerability scoring constants
+    'BASE_SCORES': {
+        'wood': 60,
+        'concrete': 50,
+        'brick': 55,
+        'bamboo': 65,
+        'stone': 58
+    },
+    'AGE_MULTIPLIER': 0.3,
+    'FLOOR_MULTIPLIER': {
+        '1': 2,
+        '2': 5,
+        '3': 8
+    },
+    'FOUNDATION_MULTIPLIER': {
+        'strip': 5,
+        'raft': 6,
+        'pile': 7,
+        'concrete': 0
+    },
+    'ROOF_MULTIPLIER': {
+        'sloped': 2,
+        'flat': 5,
+        'metal': 4,
+        'thatch': 6
+    },
+
 }
