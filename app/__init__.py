@@ -1,13 +1,13 @@
-from flask import Flask
 from flask_cors import CORS
 from .config import Config
 from .utils.logger import configure_logging
 from .utils.database import DatabaseManager
 import logging
 import sqlite3
-from flask import jsonify
+from flask import Flask, send_from_directory, request, jsonify
+import os
 
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 app.config.from_object(Config)
 
@@ -63,17 +63,13 @@ import os
 # Serve index.html for all frontend routes (SPA fallback)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def serve_spa(path):
-    static_dir = os.path.join(app.root_path, 'static')
-    
-    # Handle API routes first
+def catch_all(path):
     if path.startswith('api/'):
         return jsonify({'success': False, 'error': 'API endpoint not found'}), 404
 
-    # Check if the file exists
-    file_path = os.path.join(static_dir, path)
-    if path != "" and os.path.exists(file_path):
-        return send_from_directory(static_dir, path)
-    
-    # Default to index.html for SPA routing
-    return send_from_directory(static_dir, 'index.html')
+    static_path = os.path.join(app.static_folder, path)
+    if path and os.path.exists(static_path):
+        return send_from_directory(app.static_folder, path)
+
+    # ✅ Fallback to index.html for React/Vue-style routes like /analyze
+    return send_from_directory(app.static_folder, 'index.html')
