@@ -9,6 +9,8 @@ import numpy as np
 import hashlib
 from app.services.vulnerabity import vulnerability_calculator
 import traceback
+import sqlite3
+from app.utils.database import DatabaseManager
 
 import logging
 logger = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ def assess_vulnerability():
             m for m in all_metrics
             if isinstance(m.get('brightness'), (int, float)) and
             isinstance(m.get('contrast'), (int, float)) and
-            isinstance(m.get('detected_features'), (int, float))
+            isinstance(m.get('edge_density'), (int, float))
         ]
 
         if not valid_metrics:
@@ -56,7 +58,7 @@ def assess_vulnerability():
         image_metrics = {
             'brightness': round(np.mean([m['brightness'] for m in valid_metrics]), 1),
             'contrast': round(np.mean([m['contrast'] for m in valid_metrics]), 1),
-            'detected_features': int(np.mean([m['detected_features'] for m in valid_metrics]))
+            'edge_density': int(np.mean([m['edge_density'] for m in valid_metrics]))
         }
 
         # Combine all structural analysis into one object
