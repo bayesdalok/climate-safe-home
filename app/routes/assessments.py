@@ -43,11 +43,15 @@ def assess_vulnerability():
 
         avg_confidence = round(total_confidence / len(images), 2)
 
-        valid_metrics = [m for m in all_metrics if isinstance(m.get('brightness'), (int, float))]
+        valid_metrics = [
+            m for m in all_metrics
+            if isinstance(m.get('brightness'), (int, float)) and
+            isinstance(m.get('contrast'), (int, float)) and
+            isinstance(m.get('detected_features'), (int, float))
+        ]
 
         if not valid_metrics:
-            logger.error("No valid images with brightness data")
-            return jsonify({'success': False, 'error': 'Assessment failed: no valid image metrics found'}), 500
+            raise ValueError("no valid image metrics found")
 
         image_metrics = {
             'brightness': round(np.mean([m['brightness'] for m in valid_metrics]), 1),
