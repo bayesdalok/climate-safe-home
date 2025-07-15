@@ -881,9 +881,13 @@ class StructuralAnalyzer:
             ],
             'insights': f"Image analysis failed, but {structure_type.replace('_', ' ')} structures typically require {material_properties.get('maintenance_frequency', 'regular')} maintenance.",
             'image_metrics': {
-                'error': error_msg,
-                'image_quality': 'failed_to_process'
+                'brightness': None,
+                'contrast': None,
+                'detected_features': None,
+                'image_quality': 'failed_to_process',
+                'error': error_msg
             },
+
             'detailed_analysis': {
                 'error': error_msg,
                 'material_properties': material_properties

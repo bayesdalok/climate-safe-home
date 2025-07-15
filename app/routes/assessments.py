@@ -8,6 +8,7 @@ from app import app
 import numpy as np
 import hashlib
 from app.services.vulnerabity import vulnerability_calculator
+import traceback
 
 import logging
 logger = logging.getLogger(__name__)
@@ -42,15 +43,23 @@ def assess_vulnerability():
 
         avg_confidence = round(total_confidence / len(images), 2)
 
+        valid_metrics = [m for m in all_metrics if isinstance(m.get('brightness'), (int, float))]
+
+        if not valid_metrics:
+            logger.error("No valid images with brightness data")
+            return jsonify({'success': False, 'error': 'Assessment failed: no valid image metrics found'}), 500
+
+        image_metrics = {
+            'brightness': round(np.mean([m['brightness'] for m in valid_metrics]), 1),
+            'contrast': round(np.mean([m['contrast'] for m in valid_metrics]), 1),
+            'detected_features': int(np.mean([m['detected_features'] for m in valid_metrics]))
+        }
+
         # Combine all structural analysis into one object
         structural_analysis = {
             'structural_issues': list(set(combined_issues)),  # Remove duplicates
             'confidence_score': avg_confidence,
-            'image_metrics': {
-                'brightness': round(np.mean([m['brightness'] for m in all_metrics]), 1),
-                'contrast': round(np.mean([m['contrast'] for m in all_metrics]), 1),
-                'detected_features': int(np.mean([m['detected_features'] for m in all_metrics]))
-            }
+            'image_metrics': image_metrics
         }
 
         # Use first image's hash for caching or identification
@@ -289,8 +298,10 @@ def assess_vulnerability():
         return jsonify({'success': True, 'data': assessment.to_dict()})
 
     except Exception as e:
-        logger.error(f"Error in vulnerability assessment: {e}")
-        return jsonify({'success': False, 'error': 'Assessment failed. Please try again.'}), 500
+        print("🔥 Exception in /api/assess 🔥")
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Assessment failed: {str(e)}'}), 500
+
 
 @app.route('/api/history', methods=['GET'])
 def get_assessment_history():

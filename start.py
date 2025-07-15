@@ -147,7 +147,7 @@ def main():
 
     # Import and run the main application
     try:
-#        app = create_app()
+        #app = create_app()
         DatabaseManager("climate_safe_home.db").init_database()
         print("[OK] Database initialized")
 
