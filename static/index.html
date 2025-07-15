@@ -967,8 +967,7 @@
                         <p><strong>Upload Home Photo for AI Analysis</strong></p>
                         <p>Our AI will analyze structural vulnerabilities, materials, and surroundings</p>
                     </div>
-                    <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
-                    <img id="previewImage" class="preview-image">                    
+                    <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">            
                     <div class="ai-analysis-indicator" id="aiIndicator" style="display: none;">
                         🤖 AI Analysis Complete
                     </div>
@@ -1270,9 +1269,9 @@
                 this.uploadedImages = [];
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    this.previewImage.src = e.target.result;
-                    this.uploadArea.classList.add('has-image');
-                    this.uploadArea.classList.add('processing');
+//                    this.previewImage.src = e.target.result;
+//                    this.uploadArea.classList.add('has-image');
+//                    this.uploadArea.classList.add('processing');
                     
                     // Simulate AI processing
                     setTimeout(() => {
