@@ -1134,7 +1134,7 @@
                 this.loadingIndicator = document.getElementById('loadingIndicator');
                 this.results = document.getElementById('results');
                 this.selectedStructure = null;
-                this.uploadedImage = null;
+                this.uploadedImage = [];
                 this.assessmentCount = 0;
                 
                 this.initializeEventListeners();
@@ -1607,28 +1607,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             new EnhancedClimateSafeHome();
         });
-        document.getElementById("fileInput").addEventListener("change", function(e) {
-            const files = Array.from(e.target.files).slice(0, 5);
-            const previewContainer = document.getElementById("previewImages");
-            previewContainer.innerHTML = "";
-
-            files.forEach(file => {
-                if (!file.type.startsWith('image/')) return;
-
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = document.createElement("img");
-                    img.src = event.target.result;
-                    img.style.maxHeight = "100px";
-                    img.style.borderRadius = "8px";
-                    img.style.margin = "5px";
-                    img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.15)";
-                    previewContainer.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-
+        
 </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

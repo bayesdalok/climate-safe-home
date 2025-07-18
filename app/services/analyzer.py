@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional, Tuple, Any
 import json
 from enum import Enum
+from models.llm_fallback import LLMFallback
+import openai
+from config import Config
+from utils.logger import logger
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +45,63 @@ class AnalysisResult:
     insights: str
     image_metrics: Dict[str, Any]
     detailed_analysis: Dict[str, Any]
+
+class OpenAIAnalyzer:
+    def __init__(self):
+        self.client = openai
+        openai.api_key = Config.OPENAI_API_KEY  # Ensure this is in config.py
+
+    async def analyze(
+        self, 
+        prompt: str, 
+        images: Optional[list] = None
+    ) -> Dict[str, Any]:
+        """
+        Primary analysis using OpenAI with enhanced error handling.
+        Returns: 
+            {
+                "analysis": str, 
+                "confidence": float,
+                "raw_response": dict (optional)
+            }
+        """
+        try:
+            messages = [{"role": "user", "content": ""}]
+            model = "gpt-3.5-turbo"  # Default model
+            
+            # Handle image analysis if provided
+            if images:
+                content = [{"type": "text", "text": prompt}]
+                for img in images:
+                    if not isinstance(img, str):
+                        raise ValueError("Image must be a base64 string")
+                    content.append({
+                        "type": "image_url", 
+                        "image_url": {"url": f"data:image/jpeg;base64,{img}"}
+                    })
+                messages[0]["content"] = content
+                model = "gpt-4-vision-preview"
+            else:
+                messages[0]["content"] = prompt
+
+            response = await self.client.ChatCompletion.acreate(
+                model=model,
+                messages=messages,
+                max_tokens=1000
+            )
+            
+            return {
+                "analysis": response.choices[0].message.content,
+                "confidence": 0.9,  # High confidence for OpenAI
+                "raw_response": response  # For debugging
+            }
+
+        except openai.error.APIError as e:
+            logger.error(f"OpenAI API error: {e}")
+            raise RuntimeError("OpenAI API unavailable")
+        except Exception as e:
+            logger.error(f"OpenAI analysis failed: {e}")
+            raise RuntimeError("OpenAI processing error")
 
 class StructuralAnalyzer:
     def __init__(self):
@@ -881,9 +942,9 @@ class StructuralAnalyzer:
             ],
             'insights': f"Image analysis failed, but {structure_type.replace('_', ' ')} structures typically require {material_properties.get('maintenance_frequency', 'regular')} maintenance.",
             'image_metrics': {
-                'brightness': None,
-                'contrast': None,
-                'detected_features': None,
+                'brightness': 50.0,
+                'contrast': 50.0,
+                'edge_density': 0.0,
                 'image_quality': 'failed_to_process',
                 'error': error_msg
             },

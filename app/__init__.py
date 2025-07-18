@@ -61,7 +61,7 @@ except Exception as e:
 
 def create_app():
     # If you need factory pattern
-    app = Flask(__name__, static_folder='static')
+    app = Flask(__name__, static_folder='../static')
     # Configure your app here
     return app
 
