@@ -28,10 +28,12 @@ from app.services import (
 
 # Import routes
 from .routes import (
+    analytics,
     assessments, 
     builders, 
     weather,
     recommendations,
+    health,
     uploads,
     types,
     errors,
