@@ -8,10 +8,8 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional, Tuple, Any
 import json
 from enum import Enum
-from models.llm_fallback import LLMFallback
 import openai
-from config import Config
-from utils.logger import logger
+from ..config import Config
 
 logger = logging.getLogger(__name__)
 

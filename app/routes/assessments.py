@@ -13,8 +13,6 @@ import sqlite3
 import json
 import datetime
 import os
-from fastapi import APIRouter, Request, HTTPException
-from app.models.llm_fallback import LLMFallback
 from typing import Optional
 
 
@@ -181,76 +179,6 @@ def assess_vulnerability():
     except Exception as e:
         logger.error(f"Exception in /api/assess: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': f'Assessment failed: {str(e)}'}), 500
-
-router = APIRouter()
-llm = LLMFallback(timeout_seconds=30)  # Initialize fallback system
-
-@router.post("/assess")
-async def assess_property(request: Request):
-    """
-    Endpoint with multi-model fallback support.
-    Expects JSON: 
-    {
-        "prompt": str,
-        "images": Optional[List[str]] (base64),
-        "opencv_analysis": Optional[Dict] 
-    }
-    """
-    try:
-        # Parse request with error handling
-        try:
-            data = await request.json()
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid JSON payload")
-        
-        # Validate required fields
-        if not data.get("prompt"):
-            raise HTTPException(status_code=400, detail="Prompt is required")
-        
-        # Process assessment
-        result = await llm.assess_vulnerability(
-            prompt=data["prompt"],
-            images=data.get("images", []),
-            opencv_analysis=data.get("opencv_analysis")
-        )
-        
-        # Prepare response
-        response = {
-            "success": True,
-            "analysis": result.analysis,
-            "model_used": result.model_used.value,
-            "confidence": result.confidence,
-            "processing_time": result.processing_time,
-            "is_fallback": result.is_fallback
-        }
-        
-        # Log fallback events
-        if result.is_fallback:
-            logger.warning(
-                f"Fallback triggered. Model used: {result.model_used}. "
-                f"Confidence: {result.confidence}"
-            )
-        
-        return response
-
-    except HTTPException:
-        raise  # Re-raise validation errors
-    except Exception as e:
-        logger.error(f"Assessment failed: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="All analysis services failed. Please try again later."
-        )
-
-# Health check endpoint
-@router.get("/health")
-async def health_check():
-    services = llm.get_service_status()
-    return {
-        "status": "OK" if services["openai"] or services["ollama"] else "DEGRADED",
-        "services": services
-    }        
-
 
 def generate_fallback_recommendations(structure_data, weather_data, structural_issues, risk_level):
     """Generate fallback recommendations when GPT is unavailable"""
