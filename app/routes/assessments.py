@@ -37,8 +37,35 @@ except Exception as e:
         logger.error(f"Failed to initialize database manager with fallback: {fallback_error}")
         db_manager = None
 
+from flask import request
+import base64
+from PIL import Image
+from io import BytesIO
+
+
 @app.route('/api/assess', methods=['POST'])
 @rate_limit(max_requests=1000, window=3600) 
+def assess():
+    try:
+        data = request.get_json()
+        app.logger.info("Received data keys: %s", list(data.keys()))
+
+        image_data = data['images'][0]
+        if image_data.startswith("data:image"):
+            header, encoded = image_data.split(",", 1)
+            decoded = base64.b64decode(encoded)
+            img = Image.open(BytesIO(decoded))
+            # Now process the image (save, analyze, etc.)
+            app.logger.info("Image decoded and loaded successfully.")
+            return {"success": True, "message": "Image processed."}
+        else:
+            app.logger.warning("Invalid image format.")
+            return {"success": False, "error": "Invalid image format"}, 400
+
+    except Exception as e:
+        app.logger.error("Error processing image: %s", str(e))
+        return {"success": False, "error": "Server error"}, 500
+
 def assess_vulnerability():
     """Main vulnerability assessment endpoint"""
     try:
