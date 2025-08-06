@@ -209,7 +209,10 @@ def assess_vulnerability():
         logger.info("Assessment completed and ready to return.")
         logger.info("Returning assessment data: %s", assessment.to_dict())
         try:
-            return jsonify({'success': True, 'data': assessment.to_dict()})
+            result = assessment.to_dict()
+            result['success'] = True
+            return jsonify(result)
+
         except Exception as serialization_error:
             logger.error("Serialization error: %s", serialization_error, exc_info=True)
             return jsonify({'success': False, 'error': 'Failed to serialize assessment data'}), 500
