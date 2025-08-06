@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 """
-Startup script for Climate Safe Home API
-Now with proper CORS initialization
+Startup script with CORS support - No Blueprints needed
 """
 import os
 import sys
 import subprocess
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, jsonify  # Added jsonify
 from flask_cors import CORS  # Add this import
 from app.utils.database import DatabaseManager
 import logging
 from app.utils.logger import configure_logging
 
-# Initialize Flask app here instead of importing
+# Initialize Flask app directly here
 app = Flask(__name__)
-CORS(app)  # Initialize CORS immediately after Flask
+CORS(app)  # This one line enables CORS for all routes
 
-# Then import your routes AFTER CORS is initialized
-from app.routes import assessments  # Adjust import path as needed
-app.register_blueprint(assessments.bp)
+# Add your routes directly to the app
+@app.route('/api/health')
+def health_check():
+    return jsonify({"status": "healthy"})
+
+@app.route('/api/analytics')
+def analytics():
+    return jsonify({"data": "your analytics here"})
 
 def check_python_version():
     """Check if Python version is compatible"""
