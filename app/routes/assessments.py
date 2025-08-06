@@ -14,6 +14,9 @@ import json
 import datetime
 import os
 from typing import Optional
+import pprint
+pprint.pprint(assessment.to_dict())
+
 
 
 import logging
@@ -174,7 +177,13 @@ def assess_vulnerability():
             # Continue anyway - don't fail the entire request
 
         logger.info("Assessment completed and ready to return.")
-        return jsonify({'success': True, 'data': assessment.to_dict()})
+        logger.info("Returning assessment data: %s", assessment.to_dict())
+        try:
+            return jsonify({'success': True, 'data': assessment.to_dict()})
+        except Exception as serialization_error:
+            logger.error("Serialization error: %s", serialization_error, exc_info=True)
+            return jsonify({'success': False, 'error': 'Failed to serialize assessment data'}), 500
+
 
     except Exception as e:
         logger.error(f"Exception in /api/assess: {str(e)}", exc_info=True)
