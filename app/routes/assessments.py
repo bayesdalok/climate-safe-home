@@ -181,9 +181,18 @@ def assess_vulnerability():
         logger.error(f"Exception in /api/assess: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': f'Assessment failed: {str(e)}'}), 500
 
-@app.route('/analyze', methods=['GET'])
-def analyze_route():
-    return jsonify({"status": "ok"})
+@app.route('/analyze', methods=['GET', 'POST'])
+def analyze():
+    return jsonify({"status": "active"})
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                           'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy"})
 
 def generate_fallback_recommendations(structure_data, weather_data, structural_issues, risk_level):
     """Generate fallback recommendations when GPT is unavailable"""
