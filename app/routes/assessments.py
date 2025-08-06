@@ -181,6 +181,10 @@ def assess_vulnerability():
         logger.error(f"Exception in /api/assess: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': f'Assessment failed: {str(e)}'}), 500
 
+@app.route('/analyze', methods=['GET'])
+def analyze_route():
+    return jsonify({"status": "ok"})
+
 def generate_fallback_recommendations(structure_data, weather_data, structural_issues, risk_level):
     """Generate fallback recommendations when GPT is unavailable"""
     fallback_recs = []

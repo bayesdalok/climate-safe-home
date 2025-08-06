@@ -163,7 +163,8 @@ def main():
         print("\nPress Ctrl+C to stop the server")
         print("-" * 50)
 
-        app.run(host='0.0.0.0', port=port, debug=debug_mode)
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port)
 
     except KeyboardInterrupt:
         print("\n[INFO] Server stopped by user")
