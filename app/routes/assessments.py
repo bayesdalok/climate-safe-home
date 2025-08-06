@@ -18,6 +18,7 @@ import pprint
 import base64
 from PIL import Image
 from io import BytesIO
+from flask import send_from_directory
 
 import logging
 logger = logging.getLogger(__name__)
@@ -45,10 +46,19 @@ except Exception as e:
 @rate_limit(max_requests=1000, window=3600)
 def assess_vulnerability():
     try:
+        # Validate request has JSON
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+            
         data = request.get_json()
-        if data is None:
-            logger.error("No JSON body received")
-            return jsonify({'success': False, 'error': 'Invalid JSON body'}), 400
+        
+        # Validate required fields
+        required_fields = ['images', 'location', 'structure_type']
+        if not all(field in data for field in required_fields):
+            return jsonify({"error": f"Missing required fields: {required_fields}"}), 400
+            
+        # Add your processing logic here
+        # ...
 
         logger.info(f"Received data keys: {list(data.keys())}")
 
@@ -175,13 +185,13 @@ def assess_vulnerability():
         except Exception as db_error:
             logger.error(f"Failed to save assessment: {db_error}")
 
-        return jsonify({'success': True, 'data': assessment.to_dict()})
-
+        return jsonify({"status": "success"}), 200
+        
     except Exception as e:
-        logger.error(f"Exception in /api/assess: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': f'Assessment failed: {str(e)}'}), 500
+        logger.error(f"Error in /api/assess: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
-@app.route('/analyze', methods=['GET', 'POST'])
+@app.route('/analyze', methods=['GET'])
 def analyze():
     return jsonify({"status": "active"})
 
