@@ -15,10 +15,6 @@ import datetime
 import os
 from typing import Optional
 import pprint
-pprint.pprint(assessment.to_dict())
-
-
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -176,6 +172,7 @@ def assess_vulnerability():
             logger.error(f"Failed to save assessment: {db_error}")
             # Continue anyway - don't fail the entire request
 
+        pprint.pprint(assessment.to_dict())
         logger.info("Assessment completed and ready to return.")
         logger.info("Returning assessment data: %s", assessment.to_dict())
         try:
