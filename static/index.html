@@ -1330,6 +1330,8 @@
                     roof_type: roofType
                 };
 
+                console.log("Payload being sent:", JSON.stringify(payload, null, 2));
+
                 fetch(`${BASE_API}/api/assess`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
