@@ -44,6 +44,12 @@ def assess_vulnerability():
     try:
         data = request.get_json()
 
+        if data is None:
+            logger.error("No JSON body recieved")
+            return jsonify({'success': False, 'error': 'Invalid JSON body'}), 400
+
+        logger.info(f"Recieved data: {data}")
+
         # Validate required fields
         required_fields = ['images', 'location', 'structure_type', 'house_age', 'floor_count', 'foundation_type', 'roof_type']
         for field in required_fields:
