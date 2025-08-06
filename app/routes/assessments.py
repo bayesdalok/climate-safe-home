@@ -15,6 +15,10 @@ import datetime
 import os
 from typing import Optional
 import pprint
+import base64
+from PIL import Image
+from io import BytesIO
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -37,44 +41,16 @@ except Exception as e:
         logger.error(f"Failed to initialize database manager with fallback: {fallback_error}")
         db_manager = None
 
-from flask import request
-import base64
-from PIL import Image
-from io import BytesIO
-
-
 @app.route('/api/assess', methods=['POST'])
-@rate_limit(max_requests=1000, window=3600) 
+@rate_limit(max_requests=1000, window=3600)
 def assess_vulnerability():
     try:
         data = request.get_json()
-        app.logger.info("Received data keys: %s", list(data.keys()))
-
-        image_data = data['images'][0]
-        if image_data.startswith("data:image"):
-            header, encoded = image_data.split(",", 1)
-            decoded = base64.b64decode(encoded)
-            img = Image.open(BytesIO(decoded))
-            # Now process the image (save, analyze, etc.)
-            app.logger.info("Image decoded and loaded successfully.")
-            return {"success": True, "message": "Image processed."}
-        else:
-            app.logger.warning("Invalid image format.")
-            return {"success": False, "error": "Invalid image format"}, 400
-
-    except Exception as e:
-        app.logger.error("Error processing image: %s", str(e))
-        return {"success": False, "error": "Server error"}, 500
-
-    """Main vulnerability assessment endpoint"""
-    try:
-        data = request.get_json()
-
         if data is None:
-            logger.error("No JSON body recieved")
+            logger.error("No JSON body received")
             return jsonify({'success': False, 'error': 'Invalid JSON body'}), 400
 
-        logger.info(f"Recieved data: {data}")
+        logger.info(f"Received data keys: {list(data.keys())}")
 
         # Validate required fields
         required_fields = ['images', 'location', 'structure_type', 'house_age', 'floor_count', 'foundation_type', 'roof_type']
@@ -82,16 +58,30 @@ def assess_vulnerability():
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
 
-        # Generate image hash for deduplication
         images = data['images']
         if not isinstance(images, list) or len(images) == 0:
             return jsonify({'success': False, 'error': 'At least one image is required'}), 400
 
+        # Try decoding first image just to confirm it's valid
+        try:
+            img_b64 = images[0]
+            if img_b64.startswith("data:image"):
+                header, encoded = img_b64.split(",", 1)
+                decoded = base64.b64decode(encoded)
+                Image.open(BytesIO(decoded))  # Just to validate
+                logger.info("Image decoded and loaded successfully.")
+            else:
+                return jsonify({'success': False, 'error': 'Invalid image format'}), 400
+        except Exception as e:
+            logger.error("Image decoding failed: %s", str(e))
+            return jsonify({'success': False, 'error': 'Image decoding failed'}), 400
+
+        # Begin structural analysis
         combined_issues = []
         total_confidence = 0
         all_metrics = []
 
-        for img_b64 in images[:5]:  # Limit to 5 images
+        for img_b64 in images[:5]:
             analysis = structural_analyzer.analyze_structure(img_b64, data['structure_type'])
             combined_issues.extend(analysis.get('structural_issues', []))
             total_confidence += analysis.get('confidence_score', 0.6)
@@ -99,15 +89,9 @@ def assess_vulnerability():
 
         avg_confidence = round(total_confidence / len(images), 2)
 
-        valid_metrics = [
-            m for m in all_metrics
-            if isinstance(m.get('brightness'), (int, float)) and
-            isinstance(m.get('contrast'), (int, float)) and
-            isinstance(m.get('edge_density'), (int, float))
-        ]
-
+        valid_metrics = [m for m in all_metrics if all(isinstance(m.get(k), (int, float)) for k in ['brightness', 'contrast', 'edge_density'])]
         if not valid_metrics:
-            raise ValueError("no valid image metrics found")
+            raise ValueError("No valid image metrics found")
 
         image_metrics = {
             'brightness': round(np.mean([m['brightness'] for m in valid_metrics]), 1),
@@ -115,19 +99,15 @@ def assess_vulnerability():
             'edge_density': int(np.mean([m['edge_density'] for m in valid_metrics]))
         }
 
-        # Combine all structural analysis into one object
         structural_analysis = {
-            'structural_issues': list(set(combined_issues)),  # Remove duplicates
+            'structural_issues': list(set(combined_issues)),
             'confidence_score': avg_confidence,
             'image_metrics': image_metrics
         }
 
-        # Use first image's hash for caching or identification
         image_hash = hashlib.md5(images[0].encode()).hexdigest()
-
         weather_data = weather_analyzer.get_weather_data(data['location'])
-        
-        # Score
+
         structure_data = {
             'structure_type': data['structure_type'],
             'house_age': int(data['house_age']),
@@ -135,13 +115,14 @@ def assess_vulnerability():
             'foundation_type': data['foundation_type'],
             'roof_type': data['roof_type']
         }
+
         vulnerability_result = vulnerability_calculator.calculate_vulnerability(
             structure_data,
             weather_data['risks'],
             structural_analysis
         )
 
-        # GPT-powered insights and recommendations
+        # GPT recommendations
         gpt_recommender = GPTRecommender()
         try:
             gpt_insights, gpt_recommendations = gpt_recommender.generate_insights_and_recommendations(
@@ -150,22 +131,15 @@ def assess_vulnerability():
                 structural_analysis['structural_issues'],
                 weather_data['risks']
             )
-
-            # If GPT returns nothing useful, fallback
             if not gpt_recommendations:
                 gpt_insights, gpt_recommendations = generate_fallback_recommendations(
-                    structure_data, 
-                    weather_data, 
-                    structural_analysis['structural_issues'],
+                    structure_data, weather_data, structural_analysis['structural_issues'],
                     vulnerability_result['risk_level']
                 )
-
         except Exception as e:
-            logger.warning(f"GPT failed or quota exceeded. Falling back to rule-based: {e}")
+            logger.warning(f"GPT failed: {e}")
             gpt_insights, gpt_recommendations = generate_fallback_recommendations(
-                structure_data, 
-                weather_data, 
-                structural_analysis['structural_issues'],
+                structure_data, weather_data, structural_analysis['structural_issues'],
                 vulnerability_result['risk_level']
             )
 
@@ -179,7 +153,7 @@ def assess_vulnerability():
             confidence_score=structural_analysis['confidence_score']
         )
 
-        # Save assessment - with error handling for db_manager
+        # Save to DB
         try:
             if db_manager:
                 assessment_data = {
@@ -198,26 +172,10 @@ def assess_vulnerability():
                 }
                 assessment_id = db_manager.save_assessment(assessment_data)
                 logger.info(f"Assessment saved with ID: {assessment_id}")
-            else:
-                logger.warning("Database manager not available - assessment not saved")
         except Exception as db_error:
             logger.error(f"Failed to save assessment: {db_error}")
-            # Continue anyway - don't fail the entire request
 
-        pprint.pprint(assessment.to_dict())
-        logger.info("Assessment completed and ready to return.")
-        logger.info("Returning assessment data: %s", assessment.to_dict())
-        try:
-            return jsonify({
-                'success': True,
-                'data': assessment.to_dict()
-            })
-
-
-        except Exception as serialization_error:
-            logger.error("Serialization error: %s", serialization_error, exc_info=True)
-            return jsonify({'success': False, 'error': 'Failed to serialize assessment data'}), 500
-
+        return jsonify({'success': True, 'data': assessment.to_dict()})
 
     except Exception as e:
         logger.error(f"Exception in /api/assess: {str(e)}", exc_info=True)

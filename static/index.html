@@ -1388,26 +1388,35 @@
             }
 
             populateResults(data) {
+                if (!data || typeof data !== 'object') {
+                    console.error("Invalid result data:", data);
+                    this.showNotification("Something went wrong with the assessment result.", 'error');
+                    return;
+                }
+
                 // Update vulnerability score
-                document.getElementById('scoreNumber').textContent = data.overall_score;
+                document.getElementById('scoreNumber').textContent = data.overall_score ?? 'N/A';
                 
                 // Set risk level
                 const riskElement = document.getElementById('riskLevel');
-                riskElement.textContent = data.risk_level;
-                riskElement.className = `risk-level risk-${data.risk_level.toLowerCase()}`;
+                const riskLevel = data.risk_level ?? 'Unknown';
+                riskElement.textContent = riskLevel;
+                riskElement.className = `risk-level risk-${riskLevel.toLowerCase()}`;
 
                 // Update AI insights
-                document.getElementById('aiInsightsText').textContent = data.ai_insights;
+                const insightsText = data.ai_insights ?? 'No insights available.';
+                document.getElementById('aiInsightsText').textContent = insightsText;
                 document.getElementById('aiInsights').style.display = 'block';
 
                 // Update weather info
-                this.updateWeatherInfo(data.weather_risks);
+                this.updateWeatherInfo(data.weather_risks ?? []);
 
                 // Update recommendations
-                this.updateRecommendations(data.recommendations);
+                this.updateRecommendations(data.recommendations ?? []);
                 
                 // Update assessment counter
                 this.updateAssessmentCounter();
+
             if (data.ai_insights.includes("temporarily unavailable")) {
                 this.showNotification("AI unavailable. Showing rule-based suggestions.", "warning");
             }
