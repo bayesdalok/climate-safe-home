@@ -45,7 +45,7 @@ from io import BytesIO
 
 @app.route('/api/assess', methods=['POST'])
 @rate_limit(max_requests=1000, window=3600) 
-def assess():
+def assess_vulnerability():
     try:
         data = request.get_json()
         app.logger.info("Received data keys: %s", list(data.keys()))
@@ -66,7 +66,6 @@ def assess():
         app.logger.error("Error processing image: %s", str(e))
         return {"success": False, "error": "Server error"}, 500
 
-def assess_vulnerability():
     """Main vulnerability assessment endpoint"""
     try:
         data = request.get_json()
@@ -209,9 +208,11 @@ def assess_vulnerability():
         logger.info("Assessment completed and ready to return.")
         logger.info("Returning assessment data: %s", assessment.to_dict())
         try:
-            result = assessment.to_dict()
-            result['success'] = True
-            return jsonify(result)
+            return jsonify({
+                'success': True,
+                'data': assessment.to_dict()
+            })
+
 
         except Exception as serialization_error:
             logger.error("Serialization error: %s", serialization_error, exc_info=True)
