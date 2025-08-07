@@ -46,50 +46,36 @@ except Exception as e:
 @rate_limit(max_requests=1000, window=3600)
 def assess_vulnerability():
     try:
-        # Validate request has JSON
         if not request.is_json:
             return jsonify({"error": "Request must be JSON"}), 400
-            
+
         data = request.get_json()
-        
-        # Validate required fields
-        required_fields = ['images', 'location', 'structure_type']
-        if not all(field in data for field in required_fields):
-            return jsonify({"error": f"Missing required fields: {required_fields}"}), 400
-            
-        # Add your processing logic here
-        # ...
 
-        logger.info(f"Received data keys: {list(data.keys())}")
-
-        # Validate required fields
-        required_fields = ['images', 'location', 'structure_type', 'house_age', 'floor_count', 'foundation_type', 'roof_type']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        required_fields = [
+            'images', 'location', 'structure_type',
+            'house_age', 'floor_count', 'foundation_type', 'roof_type'
+        ]
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return jsonify({"error": f"Missing required fields: {missing_fields}"}), 400
 
         images = data['images']
-        if not isinstance(images, list) or len(images) == 0:
-            return jsonify({'success': False, 'error': 'At least one image is required'}), 400
+        if not isinstance(images, list) or not images:
+            return jsonify({"error": "At least one image is required"}), 400
 
-        # Try decoding first image just to confirm it's valid
         try:
             img_b64 = images[0]
             if img_b64.startswith("data:image"):
-                header, encoded = img_b64.split(",", 1)
+                _, encoded = img_b64.split(",", 1)
                 decoded = base64.b64decode(encoded)
-                Image.open(BytesIO(decoded))  # Just to validate
-                logger.info("Image decoded and loaded successfully.")
+                Image.open(BytesIO(decoded))
             else:
-                return jsonify({'success': False, 'error': 'Invalid image format'}), 400
+                return jsonify({"error": "Invalid image format"}), 400
         except Exception as e:
             logger.error("Image decoding failed: %s", str(e))
-            return jsonify({'success': False, 'error': 'Image decoding failed'}), 400
+            return jsonify({"error": "Image decoding failed"}), 400
 
-        # Begin structural analysis
-        combined_issues = []
-        total_confidence = 0
-        all_metrics = []
+        combined_issues, total_confidence, all_metrics = [], 0, []
 
         for img_b64 in images[:5]:
             analysis = structural_analyzer.analyze_structure(img_b64, data['structure_type'])
@@ -132,9 +118,8 @@ def assess_vulnerability():
             structural_analysis
         )
 
-        # GPT recommendations
-        gpt_recommender = GPTRecommender()
         try:
+            gpt_recommender = GPTRecommender()
             gpt_insights, gpt_recommendations = gpt_recommender.generate_insights_and_recommendations(
                 data['structure_type'],
                 vulnerability_result['score'],
@@ -142,10 +127,7 @@ def assess_vulnerability():
                 weather_data['risks']
             )
             if not gpt_recommendations:
-                gpt_insights, gpt_recommendations = generate_fallback_recommendations(
-                    structure_data, weather_data, structural_analysis['structural_issues'],
-                    vulnerability_result['risk_level']
-                )
+                raise ValueError("Empty recommendations")
         except Exception as e:
             logger.warning(f"GPT failed: {e}")
             gpt_insights, gpt_recommendations = generate_fallback_recommendations(
@@ -163,7 +145,6 @@ def assess_vulnerability():
             confidence_score=structural_analysis['confidence_score']
         )
 
-        # Save to DB
         try:
             if db_manager:
                 assessment_data = {
@@ -180,8 +161,7 @@ def assess_vulnerability():
                     'recommendations': gpt_recommendations,
                     'weather_data': weather_data
                 }
-                assessment_id = db_manager.save_assessment(assessment_data)
-                logger.info(f"Assessment saved with ID: {assessment_id}")
+                db_manager.save_assessment(assessment_data)
         except Exception as db_error:
             logger.error(f"Failed to save assessment: {db_error}")
 
@@ -198,7 +178,6 @@ def assess_vulnerability():
             }
         }), 200
 
-        
     except Exception as e:
         logger.error(f"Error in /api/assess: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
