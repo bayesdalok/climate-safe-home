@@ -185,7 +185,19 @@ def assess_vulnerability():
         except Exception as db_error:
             logger.error(f"Failed to save assessment: {db_error}")
 
-        return jsonify({"status": "success"}), 200
+        return jsonify({
+            "success": True,
+            "data": {
+                "score": vulnerability_result['score'],
+                "risk_level": vulnerability_result['risk_level'],
+                "recommendations": gpt_recommendations,
+                "ai_insights": gpt_insights,
+                "structural_issues": structural_analysis['structural_issues'],
+                "confidence_score": structural_analysis['confidence_score'],
+                "weather_risks": weather_data['risks']
+            }
+        }), 200
+
         
     except Exception as e:
         logger.error(f"Error in /api/assess: {str(e)}")
@@ -198,7 +210,7 @@ def analyze():
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
-                           'favicon.ico', mimetype='image/vnd.microsoft.icon')
+                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/health')
 def health():
